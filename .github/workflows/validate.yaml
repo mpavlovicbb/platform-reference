@@ -1,0 +1,39 @@
+# Minimal validation from phase 1: secret scanning and lint.
+# Grows in phase 5 with kubeconform, conftest, tflint, and trivy.
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # scan full history, not just the tip
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  lint:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install linters
+        run: pip install --quiet pre-commit yamllint
+      - name: Run pre-commit
+        # gitleaks runs as its own job above; shellcheck is preinstalled on ubuntu-latest
+        env:
+          SKIP: gitleaks
+        run: pre-commit run --all-files --show-diff-on-failure
