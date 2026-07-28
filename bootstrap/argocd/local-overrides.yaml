@@ -1,0 +1,24 @@
+# Local-only deviations from the stock ArgoCD install, applied by scripts/up.sh
+# after the pinned upstream manifest. Kept as patch documents rather than a fork
+# of the install manifest so the upstream pin stays byte-identical.
+#
+# 1. argocd-server behind NodePort 30081 (mapped to localhost:8081 by kind).
+# 2. TLS disabled on the server: on localhost, behind kind's port mapping,
+#    a self-signed cert adds a browser warning and no security.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server-nodeport
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: argocd
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: argocd-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      nodePort: 30081
