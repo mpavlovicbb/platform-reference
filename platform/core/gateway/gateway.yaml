@@ -31,10 +31,12 @@ spec:
           value:
             spec:
               ports:
+                # Only ports with a matching Gateway listener may appear here:
+                # an entry without a listener merges into the generated service
+                # as a nameless port and fails validation. 443 joins with the
+                # https listener.
                 - port: 80
                   nodePort: 30080
-                - port: 443
-                  nodePort: 30443
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
