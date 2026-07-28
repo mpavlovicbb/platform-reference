@@ -63,7 +63,9 @@ EOF
 # --- ArgoCD ----------------------------------------------------------------
 say "ArgoCD ${ARGOCD_VERSION}"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -n argocd \
+# Server-side apply: the ApplicationSet CRD exceeds the 256 KB annotation limit
+# that client-side apply needs for last-applied-configuration.
+kubectl apply --server-side --force-conflicts -n argocd \
   -f "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
 
 # Local-only: serve without TLS (see bootstrap/argocd/local-overrides.yaml).
