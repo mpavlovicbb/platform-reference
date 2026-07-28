@@ -1,0 +1,16 @@
+# Registers the Envoy Gateway OCI helm registry with ArgoCD. This is a
+# Repository declaration, not a credential: the registry is public and the
+# Secret carries no auth material — ArgoCD just requires the repository
+# to be declared via a labelled Secret.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repo-envoyproxy-oci
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: envoyproxy-oci
+  type: helm
+  url: registry-1.docker.io/envoyproxy
+  enableOCI: "true"
