@@ -40,6 +40,14 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
+  # The chart renders a literal `labels: {}` on its policies.kyverno.io CRDs;
+  # the API server drops empty maps, which reads as permanent drift. Scoped to
+  # CRD labels only — everything else still diffs normally.
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jsonPointers:
+        - /metadata/labels
   syncPolicy:
     automated:
       prune: true
@@ -47,6 +55,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
