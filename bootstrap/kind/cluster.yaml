@@ -1,0 +1,28 @@
+# Local development cluster.
+# Single node: the full platform fits comfortably, boots faster, and has fewer
+# moving parts than a multi-node kind topology. Multi-node adds no fidelity here —
+# real scheduling behaviour is exercised on the Cluster API paths instead.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: platform
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # Envoy Gateway (HTTP) — platform ingress, phase 2
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+      # Envoy Gateway (HTTPS)
+      - containerPort: 30443
+        hostPort: 8443
+        protocol: TCP
+      # ArgoCD server (NodePort, insecure-local)
+      - containerPort: 30081
+        hostPort: 8081
+        protocol: TCP
+containerdConfigPatches:
+  # Route localhost:5001 pulls to the kind-registry sidecar container,
+  # so locally built demo images need no external registry.
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5001"]
+      endpoint = ["http://kind-registry:5000"]
