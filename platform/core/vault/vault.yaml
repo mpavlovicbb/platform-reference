@@ -1,0 +1,69 @@
+# Vault in dev mode as the local secrets backend. Plain manifests instead of the
+# upstream chart for one reason: the chart's dev mode defaults the root token to
+# a committed literal, and this repo never commits credentials. The token is
+# generated at boot by scripts/up.sh into the vault-dev-token Secret; the pod
+# reads it from the environment.
+#
+# Dev mode is in-memory and local-only by design. The cloud paths swap this
+# whole backend for AWS Secrets Manager / Azure Key Vault at the
+# ClusterSecretStore boundary — nothing above it changes.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault
+  namespace: vault
+  labels:
+    app.kubernetes.io/name: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vault
+    spec:
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.20
+          args: ["server", "-dev"]
+          env:
+            - name: VAULT_DEV_LISTEN_ADDRESS
+              value: "0.0.0.0:8200"
+            - name: VAULT_DEV_ROOT_TOKEN_ID
+              valueFrom:
+                secretKeyRef:
+                  name: vault-dev-token
+                  key: token
+          ports:
+            - containerPort: 8200
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: vault
+  labels:
+    app.kubernetes.io/name: vault
+spec:
+  selector:
+    app.kubernetes.io/name: vault
+  ports:
+    - name: http
+      port: 8200
+      targetPort: http
