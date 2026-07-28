@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 SHELL := /usr/bin/env bash
 
-.PHONY: help up down status lint
+.PHONY: help up down status lint cast
 
 help: ## List available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -20,3 +20,6 @@ status: ## Show sync and health state of every application
 
 lint: ## Run every check CI runs, locally
 	@pre-commit run --all-files
+
+cast: ## Record the README tour GIF (needs a running cluster)
+	@./scripts/record-cast.sh
