@@ -18,7 +18,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
+  # ArgoCD appends pre-delete finalizers to child Applications whose charts
+  # ship helm pre-delete hooks (kyverno does). Finalizers on Applications are
+  # runtime-owned; comparing them to git only manufactures drift.
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Application
+      jsonPointers:
+        - /metadata/finalizers
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - RespectIgnoreDifferences=true
