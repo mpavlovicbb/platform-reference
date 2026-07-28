@@ -1,22 +1,58 @@
-# Local state
+# --- Local state -----------------------------------------------------------
 .DS_Store
 *.log
 /tmp/
+*.bak
+*.orig
+*.swp
 
-# Terraform
-**/.terraform/
-*.tfstate
-*.tfstate.backup
-*.tfvars
-!*.auto.tfvars.example
-
-# Tool caches
-.mypy_cache/
-.venv/
-site/
-
-# Never commit credentials of any kind
+# --- Credentials and secrets: never committed, no exceptions ---------------
+# gitleaks scans every commit as the backstop; this stops the accident earlier.
+.env
+.env.*
+!.env.example
 *.pem
 *.key
-kubeconfig*
-!bootstrap/kind/kubeconfig.note
+*.crt
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+*.token
+.netrc
+.npmrc
+credentials*.json
+service-account*.json
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+vault-keys*
+unseal*
+
+# --- Terraform -------------------------------------------------------------
+# State and plans can embed provider credentials and resource secrets.
+**/.terraform/
+.terraform.lock.hcl.tmp
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+crash.log
+crash.*.log
+
+# --- Kubernetes / Helm local artifacts -------------------------------------
+charts/*.tgz
+values-local*.yaml
+*-secret.yaml
+!*-external-secret.yaml  # ExternalSecret CRs hold references, not secret data
+
+# --- Tool caches and build output ------------------------------------------
+.venv/
+.mypy_cache/
+__pycache__/
+node_modules/
+site/
+.pre-commit-cache/
