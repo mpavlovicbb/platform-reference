@@ -5,6 +5,11 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    # The chart renders 'labels: {}' on its CRDs; legacy diffing reads the
+    # server-dropped empty map as permanent drift. Server-side diff compares
+    # through the same SSA machinery that applies the manifests, so the
+    # phantom disappears.
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
