@@ -1,0 +1,15 @@
+extends: default
+
+rules:
+  line-length:
+    max: 140
+  comments:
+    min-spaces-from-content: 1
+  document-start: disable
+  truthy:
+    # "on:" in GitHub workflow files trips the default truthy rule
+    check-keys: false
+
+ignore: |
+  site/
+  .venv/

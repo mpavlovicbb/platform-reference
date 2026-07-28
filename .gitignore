@@ -1,0 +1,22 @@
+# Local state
+.DS_Store
+*.log
+/tmp/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.auto.tfvars.example
+
+# Tool caches
+.mypy_cache/
+.venv/
+site/
+
+# Never commit credentials of any kind
+*.pem
+*.key
+kubeconfig*
+!bootstrap/kind/kubeconfig.note
