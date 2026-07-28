@@ -1,0 +1,9 @@
+# Local trust root: a self-signed issuer. The cloud paths document ACME
+# issuers instead; consumers reference the issuer name either way — that
+# indirection is the swappable layer.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
