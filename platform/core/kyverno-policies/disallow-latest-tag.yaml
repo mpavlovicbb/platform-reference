@@ -1,0 +1,27 @@
+# Enforced only in namespaces that opt in via the enforce-policies label —
+# tenant namespaces get guardrails, platform system namespaces stay out of
+# the blast radius.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-pinned-tag
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchLabels:
+                  platform.mpavlovicbb.dev/enforce-policies: "true"
+      validate:
+        message: >-
+          Images must use a pinned tag; ':latest' and untagged images are not
+          allowed. Pin a version so rollbacks and provenance stay meaningful.
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest & *:*"
