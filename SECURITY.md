@@ -9,5 +9,5 @@ it to an internet-facing environment as-is.
 
 If you find a vulnerability in this repository — a committed secret, an unsafe
 default that is not documented as deliberate, a supply-chain issue — open a
-GitHub security advisory on this repository or email mpavlovicbb@gmail.com.
+GitHub security advisory on this repository or email milan.pavlovic@cumuluslab.io.
 You will get a response within a week.
