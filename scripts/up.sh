@@ -60,6 +60,25 @@ data:
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
 
+# --- Runtime-generated credentials -----------------------------------------
+# The Vault dev root token is generated here on every fresh cluster and lands
+# only in in-cluster Secrets — never in git, never in a file.
+say "Vault dev token"
+for ns in vault external-secrets; do
+  kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+done
+if ! kubectl -n vault get secret vault-dev-token >/dev/null 2>&1; then
+  vault_token="$(head -c 24 /dev/urandom | base64 | tr -d '/+=')"
+  for ns in vault external-secrets; do
+    kubectl -n "$ns" create secret generic vault-dev-token \
+      --from-literal=token="$vault_token" >/dev/null
+  done
+  unset vault_token
+  echo "generated and stored in vault/ and external-secrets/ namespaces"
+else
+  echo "already present"
+fi
+
 # --- ArgoCD ----------------------------------------------------------------
 say "ArgoCD ${ARGOCD_VERSION}"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
