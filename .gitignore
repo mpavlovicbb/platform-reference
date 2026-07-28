@@ -47,7 +47,9 @@ crash.*.log
 charts/*.tgz
 values-local*.yaml
 *-secret.yaml
-!*-external-secret.yaml  # ExternalSecret CRs hold references, not secret data
+# ExternalSecret CRs hold references, not secret data (inline comments are not
+# valid gitignore syntax — the exception must live on its own line)
+!*-external-secret.yaml
 
 # --- Tool caches and build output ------------------------------------------
 .venv/
