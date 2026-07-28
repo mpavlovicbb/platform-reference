@@ -1,0 +1,26 @@
+# Namespaces are platform-owned so labels (policy scope, tenancy) are versioned,
+# not a side effect of CreateNamespace.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+  labels:
+    platform.mpavlovicbb.dev/tenant: demo
+    # Kyverno Enforce policies apply only where this label is present,
+    # so platform system namespaces stay out of enforcement blast radius.
+    platform.mpavlovicbb.dev/enforce-policies: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vault
+  labels:
+    platform.mpavlovicbb.dev/component: secrets-backend
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-secrets
+  labels:
+    platform.mpavlovicbb.dev/component: secrets
