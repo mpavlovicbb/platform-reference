@@ -8,7 +8,7 @@ ARGOCD_VERSION="v3.4.5"
 CLUSTER_NAME="platform"
 REGISTRY_NAME="kind-registry"
 REGISTRY_PORT="5001"
-APP_WAIT_TIMEOUT_SECONDS=420
+APP_WAIT_TIMEOUT_SECONDS=600
 
 say()  { printf '\n==> %s\n' "$*"; }
 fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }

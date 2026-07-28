@@ -1,11 +1,14 @@
-# Seeds a demo secret into Vault on each sync, generating the value at runtime.
+# Seeds a demo secret into Vault after the server is healthy (PostSync of the
+# vault app — deliberately NOT the external-secrets app: the ExternalSecret
+# there cannot turn Healthy until this Job has run, and a PostSync hook in the
+# same app would wait for that health first. Values are generated at runtime.
 # Nothing here is a credential: the token arrives from the runtime-generated
 # Secret, the demo password from /dev/urandom.
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: vault-seed
-  namespace: external-secrets
+  namespace: vault
   annotations:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
