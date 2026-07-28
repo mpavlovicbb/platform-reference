@@ -11,8 +11,8 @@ leaves `make up` producing a fully healthy stack.
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Bootable skeleton: kind, local registry, ArgoCD, app-of-apps | done |
-| 2 | Core platform: cert-manager, external-secrets, Envoy Gateway, Kyverno | next |
-| 3 | Observability: kube-prometheus-stack, Loki, Alloy, SLO alerting | planned |
+| 2 | Core platform: cert-manager, external-secrets, Envoy Gateway, Kyverno | done |
+| 3 | Observability: kube-prometheus-stack, Loki, Alloy, SLO alerting | next |
 | 4 | Demo workloads, seeded signals, tenant golden path | planned |
 | 5 | CI, e2e in kind, supply chain (SBOM, signing) | planned |
 | 6 | Cloud paths: Cluster API for Hetzner, AWS, Azure | planned |
@@ -33,9 +33,12 @@ v3.4.5, applies the root app-of-apps, and blocks until every application is
 Synced and Healthy — then prints URLs and credentials. `make down` removes
 everything.
 
-Measured boot time for the phase 1 stack: 92 seconds from `make up` to all
-applications healthy (Apple M-series, 12 cores, Docker 11.7 GB; excludes the
-one-time `kindest/node` image pull on a first-ever machine).
+Measured boot time for the phase 2 stack (13 applications: ArgoCD,
+cert-manager, external-secrets with a Vault dev backend, Envoy Gateway,
+Kyverno with enforced policies, podinfo): 261 seconds from `make up` on a
+deleted cluster to everything Synced and Healthy (Apple M-series, 12 cores,
+Docker 11.7 GB; excludes the one-time `kindest/node` image pull on a
+first-ever machine).
 
 ## License
 
