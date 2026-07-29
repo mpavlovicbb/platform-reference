@@ -5,6 +5,11 @@ default configuration is deliberately open in places a production deployment mus
 not be (ArgoCD served without TLS on localhost, Vault in dev mode). Do not deploy
 it to an internet-facing environment as-is.
 
+Known gap, tracked for a later phase: no NetworkPolicies ship yet — east-west
+traffic is unrestricted, including plaintext access to the dev-mode Vault
+service from any pod. A production deployment needs default-deny policies in
+the vault, external-secrets, and tenant namespaces before anything else.
+
 ## Reporting a vulnerability
 
 If you find a vulnerability in this repository — a committed secret, an unsafe
