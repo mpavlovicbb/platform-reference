@@ -10,7 +10,6 @@ repos:
       - id: check-merge-conflict
       - id: check-yaml
         args: [--allow-multiple-documents]
-        exclude: ^platform/.*$  # kustomize and helm templates are validated by kubeconform instead
 
   - repo: local
     hooks:
@@ -29,3 +28,11 @@ repos:
         entry: shellcheck
         language: system
         types: [shell]
+      - id: kubeconform
+        name: kubeconform (k8s manifest schemas)
+        # Tenant files are platform config consumed by the ApplicationSet,
+        # not Kubernetes manifests; kind's config uses its own schema.
+        entry: kubeconform -strict -ignore-missing-schemas -summary
+        language: system
+        files: ^(platform|bootstrap|demo)/.*\.ya?ml$
+        exclude: ^(platform/tenants/|bootstrap/kind/)

@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 SHELL := /usr/bin/env bash
 
-.PHONY: help up down status lint cast
+.PHONY: help up down status creds lint cast
 
 help: ## List available targets
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -17,6 +17,9 @@ down: ## Tear everything down, leaving no containers behind
 
 status: ## Show sync and health state of every application
 	@./scripts/status.sh
+
+creds: ## Print service credentials for the running platform
+	@./scripts/creds.sh
 
 lint: ## Run every check CI runs, locally
 	@pre-commit run --all-files

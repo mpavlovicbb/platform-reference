@@ -9,18 +9,21 @@ type_cmd() {
   sleep 0.3
 }
 
+KUBE_CONTEXT="kind-platform"
+kc() { kubectl --context "$KUBE_CONTEXT" "$@"; }
+
 type_cmd "make status   # one GitOps root, every component reconciled"
 ./scripts/status.sh
 sleep 2.5
 
 type_cmd "kubectl run bad --image=nginx:latest -n demo   # policy says no"
-kubectl run bad --image=nginx:latest -n demo 2>&1 | head -8 || true
+kc run bad --image=nginx:latest -n demo 2>&1 | head -8 || true
 sleep 2.5
 
 type_cmd "curl -H 'Host: podinfo.platform.local' localhost:8080   # through Envoy Gateway"
-curl -s -H "Host: podinfo.platform.local" http://localhost:8080/ | head -12
+{ curl -s -H "Host: podinfo.platform.local" http://localhost:8080/ || true; } | head -12
 sleep 2.5
 
 type_cmd "kubectl -n demo get secret demo-config   # Vault -> ExternalSecret -> Secret"
-kubectl -n demo get secret demo-config
+kc -n demo get secret demo-config || true
 sleep 3
