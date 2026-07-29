@@ -16,7 +16,7 @@ measured.
 
 | Measured boot | GitOps-managed applications | Credentials in git |
 |:---:|:---:|:---:|
-| under 8 minutes — 447 s, measured | 17, from one root | 0, enforced by three layers |
+| under 8 minutes — 447 s, measured | 21, from one root | 0, enforced by three layers |
 
 ## The problem
 
@@ -80,6 +80,15 @@ Grafana (credentials printed by `make up`) serves the golden-signals dashboard
 at `http://grafana.platform.local:8080`; SLO burn-rate alerts on the demo
 workload fire end to end into Alertmanager.
 
+`make seed` adds living signal: a traffic generator, a deliberately flaky
+tenant tripping error panels, and a queue-worker with sawtooth depth — three
+distinct curve shapes, all reproducible from the repo.
+
+Onboarding a tenant is one file. [PR #14](https://github.com/mpavlovicbb/platform-reference/pull/14)
+is the proof: a single YAML under `platform/tenants/` merged, and the
+ApplicationSet produced the namespace (policy labels included), the workload,
+and the scrape config with no other change.
+
 ## Repository layout
 
 ```
@@ -89,7 +98,10 @@ platform/
               demo tenant workload (podinfo) the diagram and quickstart exercise
   core/       cert-manager, vault, external-secrets, gateway, kyverno policies,
               observability (SLO rules, dashboards as code), namespaces
-scripts/      up / down / status / record-cast, with preflight and health gates
+  tenants/    one file per tenant — the golden path's entire onboarding surface
+demo/         seed workloads: queue-worker (built into the local registry),
+              traffic generator, and the opt-in seed Application
+scripts/      up / down / status / creds / seed / record-cast, preflight and health gated
 docs/         architecture diagram and cast assets; ADRs and playbooks land with phase 7
 ```
 
@@ -98,7 +110,9 @@ docs/         architecture diagram and cast assets; ADRs and playbooks land with
 Built in phases; each phase leaves `make up` green and ships as a tagged
 release. Done: bootable skeleton (phase 1, v0.1.0), core platform (phase 2,
 v0.2.0), observability — kube-prometheus-stack, Loki, Alloy, SLO burn-rate
-alerting (phase 3, v0.3.0). The remaining phases are tracked as
+alerting (phase 3, v0.3.0), tenant golden path and seeded demo signals
+(phase 4, v0.4.0), plus a merged adversarial hardening pass over scripts,
+policies, and delivery ordering. The remaining phases are tracked as
 [issues under milestones](https://github.com/mpavlovicbb/platform-reference/milestones).
 
 Not here yet, and known:
