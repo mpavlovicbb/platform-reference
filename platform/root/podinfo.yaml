@@ -35,5 +35,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+    # No CreateNamespace: the namespaces app owns demo, including its policy
+    # labels. Dual ownership would open a window where the namespace exists
+    # unlabelled and enforcement silently doesn't apply.
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m

@@ -41,6 +41,11 @@ spec:
             # the steady state.
             ingestion_rate_mb: 16
             ingestion_burst_size_mb: 32
+          # retention_period is aspirational unless the compactor actually
+          # enforces it; without this the filesystem PVC grows unbounded.
+          compactor:
+            retention_enabled: true
+            delete_request_store: filesystem
         singleBinary:
           replicas: 1
           resources:

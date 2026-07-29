@@ -21,6 +21,9 @@ spec:
     helm:
       valuesObject:
         admissionController:
+          # Single replica is a laptop trade-off, stated: with the webhook's
+          # fail-closed policy, this one pod being down blocks admission in
+          # enforced namespaces. Production runs 3 replicas + PDB.
           replicas: 1
           container:
             resources:
