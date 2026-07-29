@@ -1,0 +1,46 @@
+# Continuous traffic so every dashboard curve is real, not idle flatline:
+# steady load on the healthy services, a trickle of deliberate 500s well
+# inside the demo SLO's error budget, and load on the flaky tenant whose
+# injected faults produce the errors worth alerting on.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-generator
+  namespace: demo
+  labels:
+    app.kubernetes.io/name: traffic-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traffic-generator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: traffic-generator
+    spec:
+      containers:
+        - name: traffic
+          image: curlimages/curl:8.14.1
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              i=0
+              while true; do
+                i=$((i + 1))
+                curl -s -o /dev/null --max-time 3 http://podinfo.demo.svc:9898/ || true
+                curl -s -o /dev/null --max-time 3 http://tenant-shop-podinfo.shop.svc:9898/ || true
+                curl -s -o /dev/null --max-time 5 http://tenant-flaky-podinfo.flaky.svc:9898/ || true
+                # one deliberate 500 per ~200 requests: visible, within budget
+                if [ $((i % 200)) -eq 0 ]; then
+                  curl -s -o /dev/null --max-time 3 http://podinfo.demo.svc:9898/status/500 || true
+                fi
+                sleep 0.5
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi

@@ -1,0 +1,22 @@
+# The deliberately unhealthy tenant: random errors and delays injected via
+# podinfo's fault flags. Exists so error-rate panels have a red line and the
+# burn-rate alerting has something real to detect.
+tenant:
+  name: flaky
+workload:
+  repoURL: https://stefanprodan.github.io/podinfo
+  chart: podinfo
+  version: 6.14.1
+  values:
+    logLevel: debug
+    faults:
+      delay: true
+      error: true
+    serviceMonitor:
+      enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        memory: 128Mi

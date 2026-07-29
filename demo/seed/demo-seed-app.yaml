@@ -1,0 +1,31 @@
+# Applied by scripts/seed.sh, not by the root app: the queue worker's image
+# only exists after seed builds it into the local registry, so wiring this
+# into make up would gate boot on an image that cannot exist yet.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-seed
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mpavlovicbb/platform-reference
+    targetRevision: main
+    path: demo
+    directory:
+      recurse: true
+      exclude: "seed/demo-seed-app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m

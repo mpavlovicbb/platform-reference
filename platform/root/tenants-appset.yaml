@@ -1,0 +1,52 @@
+# The golden path. Onboarding a tenant is one file in platform/tenants/ —
+# this ApplicationSet turns it into a namespace (policy-enforced by label),
+# a deployed workload, and monitoring, with no ticket and no human in the loop.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenants
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/mpavlovicbb/platform-reference
+        revision: main
+        files:
+          - path: "platform/tenants/*.yaml"
+  template:
+    metadata:
+      name: "tenant-{{.tenant.name}}"
+      labels:
+        platform.mpavlovicbb.dev/tenant: "{{.tenant.name}}"
+    spec:
+      project: default
+      source:
+        repoURL: "{{.workload.repoURL}}"
+        chart: "{{.workload.chart}}"
+        targetRevision: "{{.workload.version}}"
+        helm:
+          values: |
+            {{ .workload.values | toYaml | nindent 12 }}
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.tenant.name}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        managedNamespaceMetadata:
+          labels:
+            platform.mpavlovicbb.dev/tenant: "{{.tenant.name}}"
+            platform.mpavlovicbb.dev/enforce-policies: "true"
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 2m
