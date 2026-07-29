@@ -1,7 +1,7 @@
 # Supply chain on every release: SPDX SBOM of the repository, signed with
-# cosign keyless (GitHub OIDC identity), attached to the release. Verifiers:
-#   cosign verify-blob --certificate sbom.spdx.json.pem \
-#     --signature sbom.spdx.json.sig \
+# cosign keyless (GitHub OIDC identity) in the v3 bundle format, attached to
+# the release. Verify with:
+#   cosign verify-blob --bundle sbom.spdx.json.bundle \
 #     --certificate-identity-regexp 'github.com/mpavlovicbb/platform-reference' \
 #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
 #     sbom.spdx.json
@@ -10,6 +10,12 @@ name: release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to (re)generate the SBOM for
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -20,8 +26,12 @@ jobs:
     name: sbom and signature
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
       - name: Install syft and cosign (pinned)
         run: |
           curl -sSL https://github.com/anchore/syft/releases/download/v1.50.0/syft_1.50.0_linux_amd64.tar.gz \
@@ -31,12 +41,9 @@ jobs:
           sudo chmod +x /usr/local/bin/cosign
       - name: Generate SBOM
         run: syft scan dir:. -o spdx-json > sbom.spdx.json
-      - name: Sign SBOM (keyless)
-        run: |
-          cosign sign-blob --yes sbom.spdx.json \
-            --output-signature sbom.spdx.json.sig \
-            --output-certificate sbom.spdx.json.pem
+      - name: Sign SBOM (keyless, bundle format)
+        run: cosign sign-blob --yes --bundle sbom.spdx.json.bundle sbom.spdx.json
       - name: Attach to release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" sbom.spdx.json sbom.spdx.json.sig sbom.spdx.json.pem --clobber
+        run: gh release upload "$TAG" sbom.spdx.json sbom.spdx.json.bundle --clobber

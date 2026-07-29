@@ -1,6 +1,8 @@
 # Boots the entire platform from nothing in kind on every PR: the repo's
-# central claim, re-proven as a required check. The local git server makes
-# ArgoCD sync THIS revision's manifests, not upstream main.
+# central claim, re-proven as a required check. The revision under test is
+# pushed as a temporary ref so ArgoCD syncs THIS change, not upstream main.
+# Limitation, documented: fork PRs run with a read-only token and cannot
+# push the temp ref; same-repo branches (the only current contributors) can.
 name: e2e
 
 on:
@@ -20,6 +22,10 @@ jobs:
     name: boot full platform in kind
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write  # temp ref push; forks never receive this
+    env:
+      E2E_REF: refs/e2e/${{ github.run_id }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
@@ -28,8 +34,8 @@ jobs:
           curl -sSLo kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-amd64
           chmod +x kind && sudo mv kind /usr/local/bin/kind
 
-      - name: Serve this revision to the cluster
-        run: ./scripts/ci/e2e-git-server.sh
+      - name: Publish this revision as the e2e ref
+        run: ./scripts/ci/e2e-publish-ref.sh
 
       - name: Boot
         env:
@@ -56,5 +62,11 @@ jobs:
         run: |
           kubectl --context kind-platform get applications -n argocd \
             -o custom-columns='NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status' || true
+          kubectl --context kind-platform get application platform-root -n argocd -o jsonpath='{.status.conditions}' || true
+          kubectl --context kind-platform logs -n argocd deployment/argocd-repo-server --tail=30 || true
           kubectl --context kind-platform get pods -A --field-selector=status.phase!=Running || true
           kubectl --context kind-platform get events -A --sort-by=.lastTimestamp | tail -30 || true
+
+      - name: Delete e2e ref
+        if: always()
+        run: git push -q origin ":${E2E_REF}" || true
