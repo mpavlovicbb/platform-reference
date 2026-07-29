@@ -1,0 +1,19 @@
+# A well-behaved tenant: normal latency, clean signals.
+# This file is the entire onboarding surface — merge it and the platform does
+# the rest: namespace, policy enforcement, deployment, scraping.
+tenant:
+  name: shop
+workload:
+  repoURL: https://stefanprodan.github.io/podinfo
+  chart: podinfo
+  version: 6.14.1
+  values:
+    logLevel: debug
+    serviceMonitor:
+      enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
