@@ -1,7 +1,9 @@
 # platform-reference
 
 A production-shaped internal developer platform that runs on any cloud — or none.
-One command boots the whole thing on a laptop in 261 measured seconds.
+One command boots the whole thing — GitOps delivery, policy, secrets, gateway,
+and a full metrics/logs/alerting stack — on a laptop in under 8 minutes,
+measured.
 
 [![validate](https://github.com/mpavlovicbb/platform-reference/actions/workflows/validate.yaml/badge.svg)](https://github.com/mpavlovicbb/platform-reference/actions/workflows/validate.yaml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
@@ -14,7 +16,7 @@ One command boots the whole thing on a laptop in 261 measured seconds.
 
 | Measured boot | GitOps-managed applications | Credentials in git |
 |:---:|:---:|:---:|
-| 261 s to fully healthy | 13, from one root | 0, enforced by three layers |
+| under 8 minutes — 447 s, measured | 17, from one root | 0, enforced by three layers |
 
 ## The problem
 
@@ -29,26 +31,7 @@ reviewable.
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    subgraph lifecycle ["Cluster lifecycle"]
-        kind["kind (local, CI)"]
-        capi["Cluster API: Hetzner / AWS / Azure (planned)"]
-    end
-    subgraph delivery ["Delivery"]
-        git[(Git root)] --> argocd["ArgoCD app-of-apps"]
-    end
-    subgraph day2 ["Day-2 platform"]
-        gw["Envoy Gateway (Gateway API)"]
-        es["External Secrets + Vault"]
-        pol["Kyverno policies"]
-        cm["cert-manager"]
-        obs["Observability stack (planned)"]
-    end
-    lifecycle --> delivery
-    argocd --> gw & es & pol & cm & obs
-    argocd --> demo["Tenant workloads"]
-```
+![Architecture: cluster lifecycle, GitOps delivery, day-2 platform](docs/assets/architecture.svg)
 
 The boundary discipline is the point: swapping Vault for a cloud secrets manager
 touches one ClusterSecretStore; swapping NodePort for a LoadBalancer touches one
@@ -93,28 +76,33 @@ curl -H "Host: podinfo.platform.local" localhost:8080   # routed through Envoy
 kubectl -n demo get secret demo-config              # materialized from Vault
 ```
 
+Grafana (credentials printed by `make up`) serves the golden-signals dashboard
+at `http://grafana.platform.local:8080`; SLO burn-rate alerts on the demo
+workload fire end to end into Alertmanager.
+
 ## Repository layout
 
 ```
 bootstrap/    kind cluster config; ArgoCD install and the one hand-applied Application
 platform/
-  root/       app-of-apps: every Application the platform runs
-  core/       cert-manager, vault, external-secrets, gateway, kyverno policies, namespaces
+  root/       app-of-apps: every Application the platform runs, including the
+              demo tenant workload (podinfo) the diagram and quickstart exercise
+  core/       cert-manager, vault, external-secrets, gateway, kyverno policies,
+              observability (SLO rules, dashboards as code), namespaces
 scripts/      up / down / status / record-cast, with preflight and health gates
-docs/         assets today; architecture docs, ADRs, and playbooks land with later phases
+docs/         architecture diagram and cast assets; ADRs and playbooks land with phase 7
 ```
 
 ## Roadmap and known limitations
 
-Built in phases; each phase leaves `make up` green. Done: bootable skeleton
-(phase 1), core platform — cert-manager, External Secrets with Vault dev-mode
-backend, Envoy Gateway, Kyverno (phase 2).
+Built in phases; each phase leaves `make up` green and ships as a tagged
+release. Done: bootable skeleton (phase 1, v0.1.0), core platform (phase 2,
+v0.2.0), observability — kube-prometheus-stack, Loki, Alloy, SLO burn-rate
+alerting (phase 3, v0.3.0). The remaining phases are tracked as
+[issues under milestones](https://github.com/mpavlovicbb/platform-reference/milestones).
 
 Not here yet, and known:
 
-- No observability stack — kube-prometheus-stack, Loki, Alloy, and SLO
-  burn-rate alerting are next (phase 3); until then the platform has no
-  dashboards, which is the biggest current gap
 - No e2e boot in CI yet (phase 5) — today CI covers secret scanning and lint;
   the kind-based full-stack boot on every PR is designed but not landed
 - Cloud paths are declared boundaries, not yet shipped modules — Cluster API
