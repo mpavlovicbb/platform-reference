@@ -1,19 +1,25 @@
-# Seeds a demo secret into Vault after the server is healthy (PostSync of the
-# vault app — deliberately NOT the external-secrets app: the ExternalSecret
-# there cannot turn Healthy until this Job has run, and a PostSync hook in the
-# same app would wait for that health first. Values are generated at runtime.
-# Nothing here is a credential: the token arrives from the runtime-generated
-# Secret, the demo password from /dev/urandom.
+# Seeds a demo secret into Vault, generating the value at runtime. Lives in
+# the vault app deliberately — a hook in the external-secrets app would wait
+# on the ExternalSecret's health, which itself waits on this seed: deadlock.
+# Nothing here is a credential in git: the token arrives from the
+# runtime-generated Secret, the demo password from /dev/urandom.
+#
+# Sync hook (not PostSync) with BeforeHookCreation: dev-mode Vault is
+# in-memory, so a Vault pod restart loses the seed — any later sync of this
+# app re-runs the Job and repairs the chain instead of leaving the
+# ExternalSecret to fail on its next refresh.
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: vault-seed
   namespace: vault
   annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 6
+  # Belt and braces with the bounded wait below: the Job can never run forever.
+  activeDeadlineSeconds: 300
   template:
     metadata:
       labels:
@@ -35,8 +41,17 @@ spec:
             - /bin/sh
             - -ec
             - |
+              # Bounded wait: fail loudly so backoffLimit engages instead of
+              # hanging the sync forever.
+              tries=0
               until vault status >/dev/null 2>&1; do
-                echo "waiting for vault..."; sleep 3
+                tries=$((tries + 1))
+                if [ "$tries" -ge 40 ]; then
+                  echo "vault unreachable after 120s, giving up" >&2
+                  exit 1
+                fi
+                echo "waiting for vault... ($tries/40)"
+                sleep 3
               done
               vault kv put secret/demo/config \
                 username=demo \
