@@ -1,0 +1,18 @@
+flowchart TB
+    subgraph lifecycle ["Cluster lifecycle"]
+        kind["kind (local, CI)"]
+        capi["Cluster API: Hetzner / AWS / Azure"]
+    end
+    subgraph delivery ["Delivery"]
+        git[(Git root)] --> argocd["ArgoCD app-of-apps"]
+    end
+    subgraph day2 ["Day-2 platform"]
+        gw["Envoy Gateway (Gateway API)"]
+        es["External Secrets + Vault"]
+        pol["Kyverno policies"]
+        cm["cert-manager"]
+        obs["Prometheus / Grafana / Loki / Alloy"]
+    end
+    lifecycle --> delivery
+    argocd --> gw & es & pol & cm & obs
+    argocd --> demo["Tenant workloads"]
