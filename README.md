@@ -42,7 +42,9 @@ EnvoyProxy resource; everything above those seams is identical everywhere.
 - A developer-facing platform where onboarding a workload is a Git merge, not a ticket
 - Guardrails that fail fast: bad manifests are rejected at admission with actionable messages
 - Secrets that never touch the repository — generated at runtime, delivered through a swappable provider boundary
-- Boot-from-nothing reproducibility, measured and gated, not claimed
+- Boot-from-nothing reproducibility as a required PR check: CI boots the entire
+  platform in kind against each revision's own manifests and smoke-tests the
+  guardrail claims before anything merges
 - Failure-driven hardening: the commit history contains the real ordering deadlocks and drift bugs a clean-boot gate surfaced, each fixed declaratively
 
 ## For engineers — start here
@@ -54,7 +56,9 @@ EnvoyProxy resource; everything above those seams is identical everywhere.
 | Policy set and enforcement scoping | [platform/core/kyverno-policies/](platform/core/kyverno-policies/) |
 | Secrets chain | [platform/core/external-secrets/](platform/core/external-secrets/), [platform/core/vault/](platform/core/vault/) |
 | Ingress via Gateway API | [platform/core/gateway/](platform/core/gateway/) |
-| CI | [.github/workflows/validate.yaml](.github/workflows/validate.yaml) |
+| CI: lint, schemas, policy, misconfig | [.github/workflows/validate.yaml](.github/workflows/validate.yaml), [policies/](policies/) |
+| CI: full-platform e2e per PR | [.github/workflows/e2e.yaml](.github/workflows/e2e.yaml), [scripts/ci/e2e-git-server.sh](scripts/ci/e2e-git-server.sh) |
+| Signed SBOMs on releases | [.github/workflows/release.yaml](.github/workflows/release.yaml) |
 
 ## Quickstart
 
@@ -111,14 +115,14 @@ Built in phases; each phase leaves `make up` green and ships as a tagged
 release. Done: bootable skeleton (phase 1, v0.1.0), core platform (phase 2,
 v0.2.0), observability — kube-prometheus-stack, Loki, Alloy, SLO burn-rate
 alerting (phase 3, v0.3.0), tenant golden path and seeded demo signals
-(phase 4, v0.4.0), plus a merged adversarial hardening pass over scripts,
-policies, and delivery ordering. The remaining phases are tracked as
+(phase 4, v0.4.0), CI e2e and supply chain — every PR boots the whole
+platform, releases ship cosign-signed SBOMs (phase 5, v0.5.0) — plus a
+merged adversarial hardening pass over scripts, policies, and delivery
+ordering. The remaining phases are tracked as
 [issues under milestones](https://github.com/mpavlovicbb/platform-reference/milestones).
 
 Not here yet, and known:
 
-- No e2e boot in CI yet (phase 5) — today CI covers secret scanning and lint;
-  the kind-based full-stack boot on every PR is designed but not landed
 - Cloud paths are declared boundaries, not yet shipped modules — Cluster API
   for Hetzner, AWS, and Azure arrives in phase 6
 - Architecture decision records and migration playbooks (phase 7) will document
