@@ -1,6 +1,11 @@
 # Enforced only in namespaces that opt in via the enforce-policies label —
 # tenant namespaces get guardrails, platform system namespaces stay out of
 # the blast radius.
+#
+# Known limitation, accepted deliberately: a registry with a port and no tag
+# (localhost:5001/app) satisfies the "has a colon" test. Catching that case
+# requires reference parsing (CEL); tracked for the policy hardening issue.
+# Digest-pinned images (@sha256:...) pass, as they should.
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -19,9 +24,15 @@ spec:
                   platform.mpavlovicbb.dev/enforce-policies: "true"
       validate:
         message: >-
-          Images must use a pinned tag; ':latest' and untagged images are not
-          allowed. Pin a version so rollbacks and provenance stay meaningful.
+          Images must use a pinned tag or digest; ':latest' and untagged
+          images are not allowed. Pin a version (app:1.2.3) so rollbacks and
+          provenance stay meaningful. This applies to initContainers and
+          ephemeralContainers too.
         pattern:
           spec:
             containers:
+              - image: "!*:latest & *:*"
+            =(initContainers):
+              - image: "!*:latest & *:*"
+            =(ephemeralContainers):
               - image: "!*:latest & *:*"
