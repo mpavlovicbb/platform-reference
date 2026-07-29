@@ -79,6 +79,17 @@ else
   echo "already present"
 fi
 
+say "Grafana admin credentials"
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+if ! kubectl -n monitoring get secret grafana-admin >/dev/null 2>&1; then
+  kubectl -n monitoring create secret generic grafana-admin \
+    --from-literal=admin-user=admin \
+    --from-literal=admin-password="$(head -c 18 /dev/urandom | base64 | tr -d '/+=')" >/dev/null
+  echo "generated"
+else
+  echo "already present"
+fi
+
 # --- ArgoCD ----------------------------------------------------------------
 say "ArgoCD ${ARGOCD_VERSION}"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
@@ -128,13 +139,20 @@ elapsed=$(($(date +%s) - start_time))
 admin_password="$(kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d)"
 
+grafana_password="$(kubectl -n monitoring get secret grafana-admin \
+  -o jsonpath='{.data.admin-password}' | base64 -d 2>/dev/null || echo "n/a")"
+
 say "Platform is up (${elapsed}s)"
 cat <<EOF
 
-  Service    URL                     Credentials
-  -------    ---                     -----------
-  ArgoCD     http://localhost:8081   admin / ${admin_password}
-  podinfo    kubectl -n demo port-forward svc/podinfo 9898:9898
+  Service    URL                                          Credentials
+  -------    ---                                          -----------
+  ArgoCD     http://localhost:8081                        admin / ${admin_password}
+  Grafana    http://grafana.platform.local:8080 (*)       admin / ${grafana_password}
+  podinfo    http://podinfo.platform.local:8080 (*)
+
+  (*) Host-header routed through the gateway: either add the names to
+      /etc/hosts as 127.0.0.1, or curl -H "Host: <name>" http://localhost:8080
 
 Teardown with 'make down'. Application state: 'make status'.
 EOF
