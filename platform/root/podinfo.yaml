@@ -16,6 +16,8 @@ spec:
     targetRevision: 6.14.1
     helm:
       valuesObject:
+        serviceMonitor:
+          enabled: true
         resources:
           requests:
             cpu: 50m
