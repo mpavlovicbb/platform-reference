@@ -1,0 +1,60 @@
+# Boots the entire platform from nothing in kind on every PR: the repo's
+# central claim, re-proven as a required check. The local git server makes
+# ArgoCD sync THIS revision's manifests, not upstream main.
+name: e2e
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  boot:
+    name: boot full platform in kind
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install kind (pinned)
+        run: |
+          curl -sSLo kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-amd64
+          chmod +x kind && sudo mv kind /usr/local/bin/kind
+
+      - name: Serve this revision to the cluster
+        run: ./scripts/ci/e2e-git-server.sh
+
+      - name: Boot
+        env:
+          APP_WAIT_TIMEOUT_SECONDS: "900"  # 4 vCPU runner pulls slower than a laptop
+        run: make up
+
+      - name: Smoke - policy rejects a bad manifest
+        run: |
+          if kubectl --context kind-platform run bad --image=nginx:latest -n demo 2>err.txt; then
+            echo "policy did NOT reject nginx:latest" >&2; exit 1
+          fi
+          grep -q "disallow-latest-tag" err.txt
+
+      - name: Smoke - secrets chain materialized
+        run: kubectl --context kind-platform -n demo get secret demo-config
+
+      - name: Smoke - gateway routes
+        run: |
+          code="$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: podinfo.platform.local' http://localhost:8080/)"
+          [ "$code" = "200" ] || { echo "gateway returned $code" >&2; exit 1; }
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl --context kind-platform get applications -n argocd \
+            -o custom-columns='NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status' || true
+          kubectl --context kind-platform get pods -A --field-selector=status.phase!=Running || true
+          kubectl --context kind-platform get events -A --sort-by=.lastTimestamp | tail -30 || true

@@ -1,5 +1,6 @@
-# Validation: secret scanning, lint, and Kubernetes manifest schemas.
-# Grows in phase 5 with conftest, tflint, trivy, and the kind e2e boot.
+# Validation: secret scanning, lint, manifest schemas, repo policy, misconfig
+# scanning. tflint joins when the Terraform substrate lands (phase 6); the
+# full-platform e2e boot lives in e2e.yaml.
 name: validate
 
 on:
@@ -42,3 +43,29 @@ jobs:
         env:
           SKIP: gitleaks
         run: pre-commit run --all-files --show-diff-on-failure
+
+  policy:
+    name: conftest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install conftest (pinned)
+        run: |
+          curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.68.2/conftest_0.68.2_Linux_x86_64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin conftest
+      - name: Repo invariants
+        run: conftest test --policy policies/ platform/root/ platform/core/ demo/ bootstrap/argocd/
+
+  misconfig:
+    name: trivy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install trivy (pinned)
+        run: |
+          curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.72.0/trivy_0.72.0_Linux-64bit.tar.gz \
+            | sudo tar -xz -C /usr/local/bin trivy
+      - name: Misconfiguration scan
+        run: trivy config --exit-code 1 --severity HIGH,CRITICAL .

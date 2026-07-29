@@ -19,9 +19,19 @@ spec:
       labels:
         app.kubernetes.io/name: traffic-generator
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: traffic
           image: curlimages/curl:8.14.1
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           command:
             - /bin/sh
             - -ec

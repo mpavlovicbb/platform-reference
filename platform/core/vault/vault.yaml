@@ -25,11 +25,39 @@ spec:
       labels:
         app.kubernetes.io/name: vault
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: home
+          emptyDir: {}
       containers:
         - name: vault
           image: hashicorp/vault:1.20
           args: ["server", "-dev"]
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: home
+              mountPath: /home/vault
           env:
+            # Entrypoint chown/setcap paths are root-only; we start as the
+            # vault user directly. Dev mode does not mlock, so no IPC_LOCK.
+            - name: SKIP_CHOWN
+              value: "true"
+            - name: SKIP_SETCAP
+              value: "true"
+            - name: HOME
+              value: /home/vault
             - name: VAULT_DEV_LISTEN_ADDRESS
               value: "0.0.0.0:8200"
             - name: VAULT_DEV_ROOT_TOKEN_ID
