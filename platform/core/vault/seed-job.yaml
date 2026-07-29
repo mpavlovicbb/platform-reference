@@ -26,10 +26,28 @@ spec:
         app.kubernetes.io/name: vault-seed
     spec:
       restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: seed
           image: hashicorp/vault:1.20
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           env:
+            - name: HOME
+              value: /tmp
             - name: VAULT_ADDR
               value: http://vault.vault.svc:8200
             - name: VAULT_TOKEN

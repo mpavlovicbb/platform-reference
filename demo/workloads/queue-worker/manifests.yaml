@@ -18,9 +18,19 @@ spec:
       labels:
         app.kubernetes.io/name: queue-worker
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: worker
           image: localhost:5001/queue-worker:0.1.0
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           ports:
             - containerPort: 8000
               name: metrics

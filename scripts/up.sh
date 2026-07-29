@@ -9,7 +9,7 @@ CLUSTER_NAME="platform"
 KUBE_CONTEXT="kind-${CLUSTER_NAME}"
 REGISTRY_NAME="kind-registry"
 REGISTRY_PORT="5001"
-APP_WAIT_TIMEOUT_SECONDS=600
+APP_WAIT_TIMEOUT_SECONDS="${APP_WAIT_TIMEOUT_SECONDS:-600}"  # overridable: CI runners pull slower
 
 # Every kubectl call is pinned to the kind context: a re-run must never touch
 # whatever cluster the user's current context happens to point at.
