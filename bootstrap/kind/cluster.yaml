@@ -8,13 +8,11 @@ name: platform
 nodes:
   - role: control-plane
     extraPortMappings:
-      # Envoy Gateway (HTTP) — platform ingress, phase 2
+      # Envoy Gateway (HTTP) — platform ingress. An HTTPS mapping returns
+      # together with the https listener and cert wiring (tracked issue);
+      # dead plumbing stays out.
       - containerPort: 30080
         hostPort: 8080
-        protocol: TCP
-      # Envoy Gateway (HTTPS)
-      - containerPort: 30443
-        hostPort: 8443
         protocol: TCP
       # ArgoCD server (NodePort, insecure-local)
       - containerPort: 30081
