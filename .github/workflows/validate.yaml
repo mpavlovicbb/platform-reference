@@ -69,3 +69,26 @@ jobs:
             | sudo tar -xz -C /usr/local/bin trivy
       - name: Misconfiguration scan
         run: trivy config --exit-code 1 --severity HIGH,CRITICAL .
+
+  terraform:
+    name: terraform
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install terraform and tflint (pinned)
+        run: |
+          curl -sSLo /tmp/tf.zip https://releases.hashicorp.com/terraform/1.15.6/terraform_1.15.6_linux_amd64.zip
+          sudo unzip -oq /tmp/tf.zip -d /usr/local/bin
+          curl -sSLo /tmp/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v0.64.0/tflint_linux_amd64.zip
+          sudo unzip -oq /tmp/tflint.zip -d /usr/local/bin
+      - name: Validate and lint every environment
+        # Plan-level checks without credentials: validate + tflint. Applying
+        # is a human act by design — no cloud credentials exist in CI.
+        run: |
+          for env in hetzner aws azure; do
+            echo "=== $env ==="
+            terraform -chdir="infrastructure/environments/$env" init -backend=false -input=false
+            terraform -chdir="infrastructure/environments/$env" validate
+            tflint --chdir="infrastructure/environments/$env"
+          done

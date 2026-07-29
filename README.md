@@ -57,8 +57,9 @@ EnvoyProxy resource; everything above those seams is identical everywhere.
 | Secrets chain | [platform/core/external-secrets/](platform/core/external-secrets/), [platform/core/vault/](platform/core/vault/) |
 | Ingress via Gateway API | [platform/core/gateway/](platform/core/gateway/) |
 | CI: lint, schemas, policy, misconfig | [.github/workflows/validate.yaml](.github/workflows/validate.yaml), [policies/](policies/) |
-| CI: full-platform e2e per PR | [.github/workflows/e2e.yaml](.github/workflows/e2e.yaml), [scripts/ci/e2e-git-server.sh](scripts/ci/e2e-git-server.sh) |
+| CI: full-platform e2e per PR | [.github/workflows/e2e.yaml](.github/workflows/e2e.yaml), [scripts/ci/e2e-publish-ref.sh](scripts/ci/e2e-publish-ref.sh) |
 | Signed SBOMs on releases | [.github/workflows/release.yaml](.github/workflows/release.yaml) |
+| Cloud paths: substrate contract + Cluster API | [infrastructure/](infrastructure/) |
 
 ## Quickstart
 
@@ -116,15 +117,17 @@ release. Done: bootable skeleton (phase 1, v0.1.0), core platform (phase 2,
 v0.2.0), observability — kube-prometheus-stack, Loki, Alloy, SLO burn-rate
 alerting (phase 3, v0.3.0), tenant golden path and seeded demo signals
 (phase 4, v0.4.0), CI e2e and supply chain — every PR boots the whole
-platform, releases ship cosign-signed SBOMs (phase 5, v0.5.0) — plus a
-merged adversarial hardening pass over scripts, policies, and delivery
-ordering. The remaining phases are tracked as
+platform, releases ship cosign-signed SBOMs (phase 5, v0.5.0), cloud paths —
+Terraform substrate modules behind one shared contract plus Cluster API
+manifests for Hetzner, AWS, and Azure, validated and linted in CI, never
+CI-applied (phase 6, v0.6.0) — plus a merged adversarial hardening pass over
+scripts, policies, and delivery ordering. The remaining phase is tracked as
 [issues under milestones](https://github.com/mpavlovicbb/platform-reference/milestones).
 
 Not here yet, and known:
 
-- Cloud paths are declared boundaries, not yet shipped modules — Cluster API
-  for Hetzner, AWS, and Azure arrives in phase 6
+- The cloud paths are validated references, not battle-tested deployments —
+  no CI applies them, and they say so in their READMEs
 - Architecture decision records and migration playbooks (phase 7) will document
   the trade-offs the commit history currently carries implicitly
 - Vault runs in dev mode and ArgoCD serves plaintext on localhost — deliberate

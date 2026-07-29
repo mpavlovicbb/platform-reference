@@ -1,0 +1,137 @@
+# Cluster API manifests for the Hetzner path (CAPH v1.1.x, API v1beta1).
+# Reference: documented and schema-shaped, not CI-applied. Names in
+# <angle-brackets> come from the Terraform substrate outputs.
+#
+# Flow: clusterctl init --infrastructure hetzner on the management cluster,
+# create the hetzner token secret, apply this file, then bootstrap ArgoCD on
+# the workload cluster exactly as scripts/up.sh does for kind.
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: platform-production
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+    services:
+      cidrBlocks: ["172.16.0.0/12"]
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: platform-production-cp
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: HetznerCluster
+    name: platform-production
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HetznerCluster
+metadata:
+  name: platform-production
+  namespace: default
+spec:
+  hcloudNetwork:
+    enabled: true
+    id: <substrate.network_id>
+  controlPlaneRegions: [fsn1]
+  controlPlaneEndpoint:
+    host: ""
+    port: 443
+  controlPlaneLoadBalancer:
+    region: fsn1
+    type: lb11
+  hcloudPlacementGroups:
+    - name: control-plane
+      type: spread
+  hetznerSecretRef:
+    name: hetzner
+    key:
+      hcloudToken: hcloud
+  sshKeys:
+    hcloud:
+      - name: <substrate.ssh_key_ref>
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: platform-production-cp
+  namespace: default
+spec:
+  replicas: 3
+  version: v1.31.4
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: HCloudMachineTemplate
+      name: platform-production-cp
+  kubeadmConfigSpec:
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+    joinConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          cloud-provider: external
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HCloudMachineTemplate
+metadata:
+  name: platform-production-cp
+  namespace: default
+spec:
+  template:
+    spec:
+      type: cpx31
+      imageName: ubuntu-24.04
+      placementGroupName: control-plane
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  clusterName: platform-production
+  replicas: 3
+  selector:
+    matchLabels: {}
+  template:
+    spec:
+      clusterName: platform-production
+      version: v1.31.4
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: platform-production-workers
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: HCloudMachineTemplate
+        name: platform-production-workers
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: HCloudMachineTemplate
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  template:
+    spec:
+      type: cpx41
+      imageName: ubuntu-24.04
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
