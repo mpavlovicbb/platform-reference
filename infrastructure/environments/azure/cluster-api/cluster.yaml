@@ -1,0 +1,115 @@
+# Cluster API reference for Azure (CAPZ, API v1beta1). Documented and
+# schema-shaped, not CI-applied; <substrate.*> values come from Terraform
+# outputs. Flow mirrors the Hetzner README with clusterctl init
+# --infrastructure azure and workload-identity credentials.
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: platform-production
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: platform-production-cp
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: AzureCluster
+    name: platform-production
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureCluster
+metadata:
+  name: platform-production
+  namespace: default
+spec:
+  location: germanywestcentral
+  resourceGroup: <substrate.resource_group>
+  networkSpec:
+    vnet:
+      name: platform-production-vnet
+      resourceGroup: <substrate.resource_group>
+    subnets:
+      - name: platform-production-nodes
+        role: node
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: platform-production-cp
+  namespace: default
+spec:
+  replicas: 3
+  version: v1.31.4
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: AzureMachineTemplate
+      name: platform-production-cp
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureMachineTemplate
+metadata:
+  name: platform-production-cp
+  namespace: default
+spec:
+  template:
+    spec:
+      vmSize: Standard_D4s_v5
+      osDisk:
+        diskSizeGB: 128
+        osType: Linux
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  clusterName: platform-production
+  replicas: 3
+  selector:
+    matchLabels: {}
+  template:
+    spec:
+      clusterName: platform-production
+      version: v1.31.4
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: platform-production-workers
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: AzureMachineTemplate
+        name: platform-production-workers
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureMachineTemplate
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  template:
+    spec:
+      vmSize: Standard_D8s_v5
+      osDisk:
+        diskSizeGB: 128
+        osType: Linux
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external

@@ -1,0 +1,112 @@
+# Cluster API reference for AWS (CAPA, API v1beta2). Documented and
+# schema-shaped, not CI-applied; <substrate.*> values come from Terraform
+# outputs. Flow mirrors the Hetzner README: clusterctl init
+# --infrastructure aws, credentials via clusterawsadm, apply, bootstrap
+# ArgoCD identically.
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: platform-production
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: platform-production-cp
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSCluster
+    name: platform-production
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSCluster
+metadata:
+  name: platform-production
+  namespace: default
+spec:
+  region: eu-central-1
+  network:
+    vpc:
+      id: <substrate.network_id>
+    subnets:
+      - id: <substrate.subnet_ids[0]>
+      - id: <substrate.subnet_ids[1]>
+  controlPlaneLoadBalancer:
+    scheme: internet-facing
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: platform-production-cp
+  namespace: default
+spec:
+  replicas: 3
+  version: v1.31.4
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSMachineTemplate
+      name: platform-production-cp
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  name: platform-production-cp
+  namespace: default
+spec:
+  template:
+    spec:
+      instanceType: m6i.large
+      iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  clusterName: platform-production
+  replicas: 3
+  selector:
+    matchLabels: {}
+  template:
+    spec:
+      clusterName: platform-production
+      version: v1.31.4
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: platform-production-workers
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: AWSMachineTemplate
+        name: platform-production-workers
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSMachineTemplate
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  template:
+    spec:
+      instanceType: m6i.xlarge
+      iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: platform-production-workers
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: external
