@@ -16,11 +16,17 @@ spec:
                   platform.mpavlovicbb.dev/enforce-policies: "true"
       validate:
         message: >-
-          Every container needs cpu and memory requests — the scheduler cannot
-          place what it cannot measure.
+          Every container (including initContainers) needs cpu and memory
+          requests — the scheduler cannot place what it cannot measure. Add
+          resources.requests.cpu and resources.requests.memory.
         pattern:
           spec:
             containers:
+              - resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+            =(initContainers):
               - resources:
                   requests:
                     cpu: "?*"

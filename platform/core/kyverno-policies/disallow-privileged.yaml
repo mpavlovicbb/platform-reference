@@ -1,7 +1,8 @@
-# Audit cluster-wide rather than Enforce: platform components legitimately
-# differ in their security contexts, and a reference repo should surface the
-# signal without manufacturing false positives. Tenant namespaces graduate
-# to Enforce via the labelled policies.
+# Two-tier by design: Audit cluster-wide (platform components legitimately
+# differ in their security contexts; surface signal without false positives),
+# Enforce in namespaces that opt in via the enforce-policies label — the same
+# graduation the other tenant policies use.
+---
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -10,7 +11,7 @@ spec:
   validationFailureAction: Audit
   background: true
   rules:
-    - name: no-privileged
+    - name: no-privileged-audit
       match:
         any:
           - resources:
@@ -26,5 +27,40 @@ spec:
             =(securityContext):
               =(privileged): "false"
             containers:
+              - =(securityContext):
+                  =(privileged): "false"
+            =(initContainers):
+              - =(securityContext):
+                  =(privileged): "false"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged-containers-enforced
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-privileged
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaceSelector:
+                matchLabels:
+                  platform.mpavlovicbb.dev/enforce-policies: "true"
+      validate:
+        message: >-
+          Privileged containers are rejected in tenant namespaces. Drop
+          securityContext.privileged, or run this workload in a platform
+          namespace with an explicit exemption.
+        pattern:
+          spec:
+            =(securityContext):
+              =(privileged): "false"
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+            =(initContainers):
               - =(securityContext):
                   =(privileged): "false"

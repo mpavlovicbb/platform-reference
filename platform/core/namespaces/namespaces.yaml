@@ -10,6 +10,15 @@ metadata:
     # Kyverno Enforce policies apply only where this label is present,
     # so platform system namespaces stay out of enforcement blast radius.
     platform.mpavlovicbb.dev/enforce-policies: "true"
+    platform.mpavlovicbb.dev/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    platform.mpavlovicbb.dev/component: observability
+    platform.mpavlovicbb.dev/gateway-access: "true"
 ---
 apiVersion: v1
 kind: Namespace

@@ -51,4 +51,9 @@ spec:
       port: 80
       allowedRoutes:
         namespaces:
-          from: All
+          # Only namespaces the platform has labelled may attach routes; a
+          # compromised tenant must not be able to claim grafana's hostname.
+          from: Selector
+          selector:
+            matchLabels:
+              platform.mpavlovicbb.dev/gateway-access: "true"
