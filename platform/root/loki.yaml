@@ -36,6 +36,11 @@ spec:
                   period: 24h
           limits_config:
             retention_period: 24h
+            # The first minutes after boot ingest every pod's backlog at once;
+            # the 4 MB/s default drops those batches. Sized for the burst, not
+            # the steady state.
+            ingestion_rate_mb: 16
+            ingestion_burst_size_mb: 32
         singleBinary:
           replicas: 1
           resources:
