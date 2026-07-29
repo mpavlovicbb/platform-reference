@@ -1,0 +1,19 @@
+# Phase 4 gate proof: this file is the entire change — no other edit
+# anywhere. Merging it produces the namespace (policy-enforced), the
+# workload, and scraping.
+tenant:
+  name: checkout
+workload:
+  repoURL: https://stefanprodan.github.io/podinfo
+  chart: podinfo
+  version: 6.14.1
+  values:
+    logLevel: debug
+    serviceMonitor:
+      enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
