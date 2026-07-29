@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group ArgoCD Application chart bumps by component area",
+      "matchFileNames": ["platform/root/**"],
+      "groupName": "platform charts"
+    },
+    {
+      "description": "GitHub Actions digests, pinned",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    }
+  ]
+}
