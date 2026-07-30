@@ -32,3 +32,14 @@ spec:
       selfHeal: true
     syncOptions:
       - RespectIgnoreDifferences=true
+    # The root is the one Application that must never stop trying: with sync
+    # waves gating on child health, slow-converging children (cold image
+    # pulls on a small CI runner) can outlast the default 5 attempts, after
+    # which the sync stays Failed until a human intervenes. Patient, capped
+    # backoff instead.
+    retry:
+      limit: 30
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 3m
