@@ -6,6 +6,7 @@ and a full metrics/logs/alerting stack — on a laptop in under 8 minutes,
 measured.
 
 [![validate](https://github.com/mpavlovicbb/platform-reference/actions/workflows/validate.yaml/badge.svg)](https://github.com/mpavlovicbb/platform-reference/actions/workflows/validate.yaml)
+[![docs](https://img.shields.io/badge/docs-mpavlovicbb.github.io-blue)](https://mpavlovicbb.github.io/platform-reference/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-kind%20%2B%20Cluster%20API-326CE5?logo=kubernetes&logoColor=white)
 ![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-EF7B4D?logo=argo&logoColor=white)
@@ -63,6 +64,13 @@ on localhost with credentials from `make creds`.
 - Failure-driven hardening: the commit history contains the real ordering deadlocks and drift bugs a clean-boot gate surfaced, each fixed declaratively
 
 ## For engineers — start here
+
+The deep-reading layer lives on the
+**[docs site](https://mpavlovicbb.github.io/platform-reference/)**: the
+[fifteen decision records](https://mpavlovicbb.github.io/platform-reference/adr/)
+(each with "what we gave up") and the
+[three migration playbooks](https://mpavlovicbb.github.io/platform-reference/playbooks/).
+The code itself:
 
 | Interest | Where |
 |---|---|
@@ -122,7 +130,8 @@ platform/
 demo/         seed workloads: queue-worker (built into the local registry),
               traffic generator, and the opt-in seed Application
 scripts/      up / down / status / creds / seed / record-cast, preflight and health gated
-docs/         architecture diagram and cast assets; ADRs and playbooks land with phase 7
+docs/         the docs site source: ADRs, playbooks, architecture — published at
+              mpavlovicbb.github.io/platform-reference
 ```
 
 ## Roadmap and known limitations
@@ -143,8 +152,8 @@ Not here yet, and known:
 
 - The cloud paths are validated references, not battle-tested deployments —
   no CI applies them, and they say so in their READMEs
-- Architecture decision records and migration playbooks (phase 7) will document
-  the trade-offs the commit history currently carries implicitly
+- The migration playbooks carry review markers where real-world figures
+  belong; the pattern is complete, the numbers are being filled in
 - Vault runs in dev mode and ArgoCD serves plaintext on localhost — deliberate
   for local use, documented in [SECURITY.md](SECURITY.md), unsuitable for
   internet-facing deployment as-is
