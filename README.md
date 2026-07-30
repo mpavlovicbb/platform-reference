@@ -37,6 +37,21 @@ The boundary discipline is the point: swapping Vault for a cloud secrets manager
 touches one ClusterSecretStore; swapping NodePort for a LoadBalancer touches one
 EnvoyProxy resource; everything above those seams is identical everywhere.
 
+## What it looks like running
+
+Golden signals from the seeded workloads — request curves, the flaky tenant's
+error spikes against SLO burn thresholds, latency percentiles, live logs:
+
+![Grafana golden-signals dashboard with live seeded data](docs/assets/grafana-golden-signals.png)
+
+Every application reconciling from one Git root, viewed anonymously (read-only,
+localhost-only):
+
+![ArgoCD applications view, all Synced and Healthy](docs/assets/argocd-applications.png)
+
+Both are reproducible from the repo: `make up`, `make seed`, and both UIs are
+on localhost with credentials from `make creds`.
+
 ## What this demonstrates
 
 - A developer-facing platform where onboarding a workload is a Git merge, not a ticket
