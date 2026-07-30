@@ -137,6 +137,14 @@ kc -n argocd patch configmap argocd-cm --type merge -p '{
   }
 }' >/dev/null
 
+# Anonymous read-only UI on a localhost-only deployment: reviewers and docs
+# screenshots see the application tree without credentials; mutations still
+# require login. Remove on any internet-facing deployment (see SECURITY.md).
+kc -n argocd patch configmap argocd-cm --type merge \
+  -p '{"data":{"users.anonymous.enabled":"true"}}' >/dev/null
+kc -n argocd patch configmap argocd-rbac-cm --type merge \
+  -p '{"data":{"policy.default":"role:readonly"}}' >/dev/null
+
 if [ "$insecure_before" != "true" ]; then
   kc -n argocd rollout restart deployment argocd-server
 fi

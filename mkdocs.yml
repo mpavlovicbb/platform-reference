@@ -1,0 +1,57 @@
+site_name: platform-reference
+site_description: A production-shaped internal developer platform that runs on any cloud — or none.
+site_url: https://mpavlovicbb.github.io/platform-reference/
+repo_url: https://github.com/mpavlovicbb/platform-reference
+repo_name: mpavlovicbb/platform-reference
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+    - search.suggest
+
+markdown_extensions:
+  - attr_list
+  - tables
+  - admonition
+
+nav:
+  - Home: index.md
+  - Architecture: architecture/index.md
+  - Decision records:
+      - Overview: adr/index.md
+      - 1. Cloud-independent platform: adr/0001-cloud-independent-platform.md
+      - 2. kind locally, Cluster API for real: adr/0002-kind-locally-cluster-api-for-real-clusters.md
+      - 3. kubeadm over Talos and managed: adr/0003-kubeadm-over-talos-and-managed.md
+      - 4. ArgoCD over Flux: adr/0004-argocd-over-flux.md
+      - 5. App-of-apps with ApplicationSets: adr/0005-app-of-apps-with-applicationsets.md
+      - 6. Upstream charts, never forked: adr/0006-upstream-charts-never-forked.md
+      - 7. External Secrets boundary: adr/0007-external-secrets-and-the-provider-boundary.md
+      - 8. Gateway API over ingress-nginx: adr/0008-gateway-api-over-ingress-nginx.md
+      - 9. Prometheus, and the Mimir threshold: adr/0009-kube-prometheus-stack-and-the-mimir-threshold.md
+      - 10. Loki and Alloy with budgets: adr/0010-loki-and-alloy-with-budgets.md
+      - 11. SLO burn-rate alerting: adr/0011-slo-burn-rate-alerting.md
+      - 12. Kyverno and Conftest, both: adr/0012-kyverno-at-admission-conftest-in-ci.md
+      - 13. Namespaces over vcluster: adr/0013-namespace-per-tenant-over-vcluster.md
+      - 14. Supply chain scope: adr/0014-supply-chain-scope.md
+      - 15. No Backstage in v1: adr/0015-no-backstage-in-v1.md
+  - Playbooks:
+      - Overview: playbooks/index.md
+      - APM to Grafana stack: playbooks/apm-to-grafana-stack.md
+      - Flux to ArgoCD: playbooks/flux-to-argocd.md
+      - Jenkins to GitHub Actions: playbooks/jenkins-to-github-actions.md

@@ -42,6 +42,14 @@ spec:
           # committed. Keys: admin-user / admin-password.
           admin:
             existingSecret: grafana-admin
+          # Anonymous VIEWER on a localhost-only deployment: lets docs
+          # screenshots and drive-by reviewers see dashboards without
+          # credentials. Editing still requires the admin login. Remove on
+          # any internet-facing deployment (see SECURITY.md).
+          "grafana.ini":
+            auth.anonymous:
+              enabled: true
+              org_role: Viewer
           additionalDataSources:
             - name: Loki
               type: loki
