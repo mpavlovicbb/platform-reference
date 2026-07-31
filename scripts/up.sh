@@ -113,12 +113,16 @@ else
 fi
 
 # --- ArgoCD ----------------------------------------------------------------
-say "ArgoCD ${ARGOCD_VERSION}"
+say "ArgoCD ${ARGOCD_VERSION} (vendored)"
 kc create namespace argocd --dry-run=client -o yaml | kc apply -f - >/dev/null
-# Server-side apply: the ApplicationSet CRD exceeds the 256 KB annotation limit
-# that client-side apply needs for last-applied-configuration.
+# Vendored manifest: boot does not fetch cluster-admin YAML from a mutable
+# tag over the network. Re-vendor with scripts/vendor-argocd.sh.
+# Server-side apply: the ApplicationSet CRD exceeds the 256 KB annotation
+# limit that client-side apply needs for last-applied-configuration.
+[ -f "$REPO_ROOT/bootstrap/argocd/argocd-install.yaml" ] \
+  || fail "vendored ArgoCD manifest missing — run scripts/vendor-argocd.sh ${ARGOCD_VERSION}"
 kc apply --server-side --force-conflicts -n argocd \
-  -f "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
+  -f "$REPO_ROOT/bootstrap/argocd/argocd-install.yaml"
 
 # Local-only: serve without TLS (see bootstrap/argocd/local-overrides.yaml).
 # Restart the server only when the setting actually changed.
@@ -156,6 +160,20 @@ kc -n argocd rollout status deployment argocd-server --timeout=240s \
 
 # --- Root application ------------------------------------------------------
 say "Root application"
+# Forks: ArgoCD pulls from the URLs in the manifests, not from this checkout.
+origin_url="$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)"
+origin_url="${origin_url%.git}"; origin_url="${origin_url/#git@github.com:/https:\/\/github.com\/}"
+if [ -n "$origin_url" ] && [ "$origin_url" != "https://github.com/mpavlovicbb/platform-reference" ] \
+  && grep -q "github.com/mpavlovicbb/platform-reference" "$REPO_ROOT/bootstrap/argocd/root-app.yaml"; then
+  cat >&2 <<'EOF'
+
+  WARNING: this checkout is a fork, but the manifests still point at the
+  upstream repository — the cluster will sync UPSTREAM's main, and your
+  local changes will do nothing. Run scripts/fork-init.sh, push, then
+  re-run make up.
+
+EOF
+fi
 kc apply -f "$REPO_ROOT/bootstrap/argocd/root-app.yaml" >/dev/null
 
 say "Waiting for all applications to be Synced and Healthy (timeout ${APP_WAIT_TIMEOUT_SECONDS}s)"

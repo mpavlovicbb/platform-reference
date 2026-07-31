@@ -13,3 +13,4 @@ rules:
 ignore: |
   site/
   .venv/
+  bootstrap/argocd/argocd-install.yaml

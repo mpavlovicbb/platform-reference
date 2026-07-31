@@ -17,6 +17,12 @@ spec:
       valuesObject:
         crds:
           enabled: true
+        # Gateway API support: the gateway-shim provisions certificates for
+        # annotated Gateways (the platform gateway's https listener).
+        config:
+          apiVersion: controller.config.cert-manager.io/v1alpha1
+          kind: ControllerConfiguration
+          enableGatewayAPI: true
         resources:
           requests:
             cpu: 25m
@@ -39,7 +45,6 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
     retry:
       limit: 5

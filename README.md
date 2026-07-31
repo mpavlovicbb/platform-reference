@@ -2,8 +2,8 @@
 
 A production-shaped internal developer platform that runs on any cloud — or none.
 One command boots the whole thing — GitOps delivery, policy, secrets, gateway,
-and a full metrics/logs/alerting stack — on a laptop in under 8 minutes,
-measured.
+a full metrics/logs/alerting stack, and a generated network floor — on a
+laptop in under 10 minutes, measured.
 
 [![validate](https://github.com/mpavlovicbb/platform-reference/actions/workflows/validate.yaml/badge.svg)](https://github.com/mpavlovicbb/platform-reference/actions/workflows/validate.yaml)
 [![docs](https://img.shields.io/badge/docs-mpavlovicbb.github.io-blue)](https://mpavlovicbb.github.io/platform-reference/)
@@ -17,7 +17,7 @@ measured.
 
 | Measured boot | GitOps-managed applications | Credentials in git |
 |:---:|:---:|:---:|
-| under 8 minutes — 447 s, measured | 21, from one root | 0, enforced by three layers |
+| under 10 minutes — 587 s, measured | 22, from one root | 0, enforced by three layers |
 
 ## The problem
 
@@ -101,8 +101,14 @@ Try the guardrails on the running stack:
 ```sh
 kubectl run bad --image=nginx:latest -n demo        # rejected by policy
 curl -H "Host: podinfo.platform.local" localhost:8080   # routed through Envoy
+curl -k --resolve podinfo.platform.local:8443:127.0.0.1 \
+  https://podinfo.platform.local:8443/              # TLS from the local issuer
 kubectl -n demo get secret demo-config              # materialized from Vault
+kubectl -n demo get networkpolicy                   # the generated network floor
 ```
+
+Forking? Run `scripts/fork-init.sh` first — ArgoCD syncs the URLs in the
+manifests, not your checkout.
 
 Grafana (credentials printed by `make up`) serves the golden-signals dashboard
 at `http://grafana.platform.local:8080`; SLO burn-rate alerts on the demo

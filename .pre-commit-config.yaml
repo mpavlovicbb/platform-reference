@@ -7,6 +7,8 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-added-large-files
+        # The vendored ArgoCD install manifest is ~1.8 MB by upstream's hand.
+        args: [--maxkb=2048]
       - id: check-merge-conflict
       - id: check-yaml
         args: [--allow-multiple-documents]
@@ -35,4 +37,6 @@ repos:
         entry: kubeconform -strict -ignore-missing-schemas -summary
         language: system
         files: ^(platform|bootstrap|demo)/.*\.ya?ml$
-        exclude: ^(platform/tenants/|bootstrap/kind/)
+        # tenants/ are platform config, kind/ uses its own schema, and the
+        # vendored upstream install manifest is upstream's to validate.
+        exclude: ^(platform/tenants/|bootstrap/kind/|bootstrap/argocd/argocd-install\.yaml)

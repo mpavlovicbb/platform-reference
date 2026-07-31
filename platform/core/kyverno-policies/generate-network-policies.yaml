@@ -1,0 +1,115 @@
+# Tenant namespaces get their NetworkPolicies generated, not hand-written:
+# the ApplicationSet stamps namespaces, Kyverno stamps their network floor.
+# Default-deny ingress, then exactly three allowances — same namespace,
+# Prometheus scrapes, the platform gateway. synchronize keeps them repaired.
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-tenant-network-policies
+spec:
+  # Namespaces created before Kyverno's webhook existed (demo arrives at
+  # wave -1, Kyverno at wave 0) never produce an admission event — without
+  # this, only later tenants get their floor. Found by the boot smoke test.
+  generateExisting: true
+  rules:
+    - name: default-deny-ingress
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  platform.mpavlovicbb.dev/enforce-policies: "true"
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: default-deny-ingress
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          spec:
+            podSelector: {}
+            policyTypes: [Ingress]
+    - name: allow-same-namespace
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  platform.mpavlovicbb.dev/enforce-policies: "true"
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: allow-same-namespace
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          spec:
+            podSelector: {}
+            policyTypes: [Ingress]
+            ingress:
+              - from:
+                  - podSelector: {}
+    - name: allow-monitoring-scrape
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  platform.mpavlovicbb.dev/enforce-policies: "true"
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: allow-monitoring-scrape
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          spec:
+            podSelector: {}
+            policyTypes: [Ingress]
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        kubernetes.io/metadata.name: monitoring
+    - name: allow-platform-gateway
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              selector:
+                matchLabels:
+                  platform.mpavlovicbb.dev/enforce-policies: "true"
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: allow-platform-gateway
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          spec:
+            podSelector: {}
+            policyTypes: [Ingress]
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        kubernetes.io/metadata.name: envoy-gateway-system
+---
+# The background controller needs explicit permission to manage what it
+# generates; kyverno aggregates ClusterRoles carrying this label. Managing
+# networking resources is this role's entire purpose, so the scanner
+# finding for it (KSV-0056) is acknowledged in .trivyignore with rationale.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno:generate-networkpolicies
+  labels:
+    rbac.kyverno.io/aggregate-to-background-controller: "true"
+rules:
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    verbs: [create, update, patch, delete, get, list, watch]

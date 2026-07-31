@@ -23,6 +23,27 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: cert-manager
+  labels:
+    platform.mpavlovicbb.dev/component: certificates
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kyverno
+  labels:
+    platform.mpavlovicbb.dev/component: policy
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: envoy-gateway-system
+  labels:
+    platform.mpavlovicbb.dev/component: gateway
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: vault
   labels:
     platform.mpavlovicbb.dev/component: secrets-backend

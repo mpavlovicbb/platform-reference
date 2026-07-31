@@ -7,10 +7,12 @@ access, Grafana with anonymous viewer access, Vault in dev mode. All of it is
 reachable only via localhost port mappings, and all of it must be removed
 before any internet-facing deployment.
 
-Known gap, tracked for a later phase: no NetworkPolicies ship yet — east-west
-traffic is unrestricted, including plaintext access to the dev-mode Vault
-service from any pod. A production deployment needs default-deny policies in
-the vault, external-secrets, and tenant namespaces before anything else.
+East-west traffic is restricted where it matters: Vault accepts ingress only
+from External Secrets and its own seed job, External Secrets only from the
+API server's webhook path, and every tenant namespace receives a generated
+network floor (default-deny ingress plus same-namespace, Prometheus, and
+gateway allowances) from a Kyverno generate policy. Egress restrictions are
+deliberately out of scope locally.
 
 ## Reporting a vulnerability
 

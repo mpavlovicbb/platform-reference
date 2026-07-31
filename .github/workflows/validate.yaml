@@ -55,7 +55,11 @@ jobs:
           curl -sSL https://github.com/open-policy-agent/conftest/releases/download/v0.68.2/conftest_0.68.2_Linux_x86_64.tar.gz \
             | sudo tar -xz -C /usr/local/bin conftest
       - name: Repo invariants
-        run: conftest test --policy policies/ platform/root/ platform/core/ demo/ bootstrap/argocd/
+        # The vendored upstream ArgoCD manifest is upstream's code, not ours
+        # to police — bootstrap/argocd is listed by file to keep it out.
+        run: |
+          conftest test --policy policies/ platform/root/ platform/core/ demo/ \
+            bootstrap/argocd/root-app.yaml bootstrap/argocd/local-overrides.yaml
 
   misconfig:
     name: trivy
@@ -68,7 +72,8 @@ jobs:
           curl -sSL https://github.com/aquasecurity/trivy/releases/download/v0.72.0/trivy_0.72.0_Linux-64bit.tar.gz \
             | sudo tar -xz -C /usr/local/bin trivy
       - name: Misconfiguration scan
-        run: trivy config --exit-code 1 --severity HIGH,CRITICAL .
+        # The vendored upstream manifest is scanned by its own project.
+        run: trivy config --exit-code 1 --severity HIGH,CRITICAL --skip-files "bootstrap/argocd/argocd-install.yaml" .
 
   terraform:
     name: terraform
