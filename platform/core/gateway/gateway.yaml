@@ -31,18 +31,24 @@ spec:
           value:
             spec:
               ports:
-                # Only ports with a matching Gateway listener may appear here:
-                # an entry without a listener merges into the generated service
-                # as a nameless port and fails validation. 443 joins with the
-                # https listener.
+                # Every entry here must have a matching Gateway listener: an
+                # entry without one merges into the generated service as a
+                # nameless port and fails validation.
                 - port: 80
                   nodePort: 30080
+                - port: 443
+                  nodePort: 30443
 ---
+# cert-manager's gateway-shim watches the annotation and provisions
+# platform-tls from the selfsigned issuer — the local trust root finally
+# securing something (issue #8).
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: platform
   namespace: envoy-gateway-system
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
 spec:
   gatewayClassName: platform
   listeners:
@@ -53,6 +59,20 @@ spec:
         namespaces:
           # Only namespaces the platform has labelled may attach routes; a
           # compromised tenant must not be able to claim grafana's hostname.
+          from: Selector
+          selector:
+            matchLabels:
+              platform.mpavlovicbb.dev/gateway-access: "true"
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.platform.local"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: platform-tls
+      allowedRoutes:
+        namespaces:
           from: Selector
           selector:
             matchLabels:

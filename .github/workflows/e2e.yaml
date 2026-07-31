@@ -57,6 +57,19 @@ jobs:
           code="$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: podinfo.platform.local' http://localhost:8080/)"
           [ "$code" = "200" ] || { echo "gateway returned $code" >&2; exit 1; }
 
+      - name: Smoke - https with cert-manager certificate
+        run: |
+          code="$(curl -sk -o /dev/null -w '%{http_code}' \
+            --resolve podinfo.platform.local:8443:127.0.0.1 https://podinfo.platform.local:8443/)"
+          [ "$code" = "200" ] || { echo "https gateway returned $code" >&2; exit 1; }
+          kubectl --context kind-platform -n envoy-gateway-system get secret platform-tls >/dev/null
+
+      - name: Smoke - tenant network floor generated
+        run: |
+          for np in default-deny-ingress allow-same-namespace allow-monitoring-scrape allow-platform-gateway; do
+            kubectl --context kind-platform -n demo get networkpolicy "$np" >/dev/null || { echo "missing networkpolicy $np" >&2; exit 1; }
+          done
+
       - name: Diagnostics on failure
         if: failure()
         run: |

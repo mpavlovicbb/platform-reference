@@ -1,0 +1,4 @@
+# KSV-0056: the kyverno:generate-networkpolicies ClusterRole exists to
+# manage NetworkPolicies — the finding describes its purpose. Any future
+# role matching this rule must be equally deliberate.
+KSV-0056

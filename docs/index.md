@@ -2,14 +2,14 @@
 
 One command boots a production-shaped internal developer platform — GitOps
 delivery, policy enforcement, runtime secrets, gateway, metrics, logs, and
-SLO alerting — on a laptop in under 8 minutes, measured. The same platform,
+SLO alerting — on a laptop in under 10 minutes, measured. The same platform,
 above one thin seam, targets Hetzner, AWS, or Azure.
 
 ![Architecture: cluster lifecycle, GitOps delivery, day-2 platform](assets/architecture.svg)
 
 | Measured boot | Applications from one Git root | Decision records |
 |:---:|:---:|:---:|
-| 447 s to fully healthy | 21 | 15, each with "what we gave up" |
+| 587 s to fully healthy | 22 | 15, each with "what we gave up" |
 
 [Repository](https://github.com/mpavlovicbb/platform-reference){ .md-button .md-button--primary }
 [Decision records](adr/index.md){ .md-button }
